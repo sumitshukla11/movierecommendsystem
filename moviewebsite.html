@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>🎬 Movie Recommender</title>
+<style>
+/* Common styles */
+body, html {
+  margin: 0;
+  padding: 0;
+  font-family: 'Poppins', sans-serif;
+  background: linear-gradient(to right, #0f2027, #203a43, #2c5364);
+  color: #fff;
+  height: 100%;
+  overflow-x: hidden;
+}
+
+/* Full-screen container */
+.fullscreen {
+  width: 100%;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+/* Particle canvas */
+#particles {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+}
+
+/* Container content */
+.container {
+  background: rgba(255,255,255,0.1);
+  border-radius: 20px;
+  padding: 30px 40px;
+  width: 90%;
+  max-width: 400px;
+  text-align: center;
+  backdrop-filter: blur(10px);
+  position: relative;
+  z-index: 2;
+}
+
+/* Titles */
+h1,h2,h3 {
+  color: #FFD700;
+  margin-bottom: 15px;
+}
+
+/* Inputs & buttons */
+input {
+  width: 80%;
+  padding: 10px;
+  margin: 10px 0;
+  border-radius: 8px;
+  border: none;
+  outline: none;
+  font-size: 16px;
+  text-align: center;
+}
+button {
+  padding: 8px 20px;
+  margin: 10px 5px;
+  border-radius: 12px;
+  border: none;
+  cursor: pointer;
+  font-weight: bold;
+  transition: 0.3s ease;
+}
+
+/* Login button */
+#loginBtn {
+  background-color: #FFD700;
+  color: #141E30;
+}
+#loginBtn:hover {
+  background-color: #FFC300;
+  transform: scale(1.05);
+}
+
+/* Welcome page */
+#welcomePage p {
+  font-size: 1.1rem;
+  margin-bottom: 15px;
+}
+
+/* Home and Back buttons */
+.top-btn {
+  position: fixed;
+  top: 15px;
+  padding: 6px 12px;
+  font-size: 0.8rem;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+  z-index: 10;
+  background: rgba(255, 215, 0, 0.8);
+  color: #141E30;
+  border: none;
+  transition: 0.3s ease;
+}
+.top-btn:hover {
+  transform: scale(1.05);
+  background: #FFD700;
+}
+#homeBtn { right: 15px; }
+#backBtn { left: 15px; }
+
+/* Choice buttons */
+.choice-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  margin: 15px 0;
+}
+.choice-btn {
+  flex: 1;
+  padding: 10px 8px;
+  border-radius: 10px;
+  border: 2px solid transparent;
+  background: linear-gradient(145deg, #FFD700, #FFA500);
+  color: #141E30;
+  font-weight: bold;
+  font-size: 0.9em;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 3px 12px rgba(255,215,0,0.4);
+}
+.choice-btn.active {
+  border-color: #fff;
+  box-shadow: 0 0 20px rgba(255,255,255,0.7);
+}
+.choice-btn:hover {
+  transform: scale(1.05);
+}
+
+/* Genre buttons */
+.genres {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  margin-top: 10px;
+}
+.genre-btn {
+  background: rgba(255,255,255,0.15);
+  border: 1px solid rgba(255,255,255,0.3);
+  border-radius: 10px;
+  padding: 6px 10px;
+  font-size: 0.8rem;
+  color: #FFD700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-weight: 500;
+  transition: 0.3s ease;
+}
+.genre-btn:hover { transform: scale(1.05); background: rgba(255,255,255,0.3); color:#fff; }
+.genre-btn.active { background:#FFD700; color:#141E30; font-weight:bold; box-shadow:0 0 15px rgba(255,215,0,0.6); }
+
+/* Search bar & Surprise */
+#searchInput { width: 85%; padding:8px; border-radius:8px; margin-top:10px; border:none; outline:none; color:#141E30; }
+#surpriseBtn { background: linear-gradient(145deg,#ff6600,#ff3300); color:#fff; border-radius:12px; padding:8px 15px; margin-top:10px; }
+#surpriseBtn:hover { transform: scale(1.05); box-shadow:0 0 15px rgba(255,100,0,0.5); }
+
+/* Movie list */
+#recommendations { margin-top:15px; }
+.movie {
+  background: rgba(255,255,255,0.15);
+  padding: 6px 10px;
+  margin: 5px 0;
+  border-radius: 8px;
+  animation: fadeSlideUp 0.5s ease forwards;
+  font-size: 0.85rem;
+}
+
+/* Animations */
+@keyframes fadeSlideUp {
+  from {opacity:0; transform:translateY(15px);}
+  to {opacity:1; transform:translateY(0);}
+}
+.hidden { display: none; }
+</style>
+</head>
+<body>
+
+<!-- Particle canvas for login -->
+<canvas id="particles"></canvas>
+
+<!-- Login Page -->
+<div class="fullscreen" id="loginPage">
+  <div class="container">
+    <h1>🎬 Movie Recommender</h1>
+    <h3>Login</h3>
+    <input type="text" id="username" placeholder="Username" required/>
+    <input type="password" id="password" placeholder="Password" required/>
+    <button id="loginBtn">Login</button>
+  </div>
+</div>
+
+<!-- Welcome Page -->
+<div class="fullscreen hidden" id="welcomePage">
+  <div class="container">
+    <h2>Welcome!</h2>
+    <p id="welcomeMsg"></p>
+    <button id="proceedBtn">Proceed</button>
+  </div>
+</div>
+
+<!-- Industry Selection -->
+<div class="fullscreen hidden" id="industryPage">
+  <button class="top-btn" id="backBtn">Back</button>
+  <div class="container">
+    <h2>Choose Movie Type</h2>
+    <div class="choice-buttons">
+      <button class="choice-btn active" id="hollywoodBtn">🎥 Hollywood</button>
+      <button class="choice-btn" id="bollywoodBtn">🎬 Bollywood</button>
+    </div>
+    <button id="proceedGenreBtn">Next →</button>
+  </div>
+</div>
+
+<!-- Genre Selection -->
+<div class="fullscreen hidden" id="genrePage">
+  <button class="top-btn" id="homeBtn">Home</button>
+  <div class="container">
+    <h2>Pick Genre</h2>
+    <div class="genres" id="genreButtons"></div>
+    <input type="text" id="searchInput" placeholder="🔎 Search movies..." />
+    <button id="recommendBtn">Get Recommendations 🍿</button>
+    <button id="surpriseBtn">🎲 Surprise Me!</button>
+    <div id="recommendations"></div>
+  </div>
+</div>
+
+<script>
+// Particle effect
+const canvas = document.getElementById('particles');
+const ctx = canvas.getContext('2d');
+let w = canvas.width = window.innerWidth;
+let h = canvas.height = window.innerHeight;
+let particles = [];
+for(let i=0;i<100;i++){
+  particles.push({x:Math.random()*w, y:Math.random()*h, r:Math.random()*2+1, dx:(Math.random()-0.5)*1, dy:(Math.random()-0.5)*1});
+}
+function animateParticles(){
+  ctx.clearRect(0,0,w,h);
+  particles.forEach(p=>{
+    ctx.beginPath();
+    ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+    ctx.fillStyle="rgba(255,215,0,0.7)";
+    ctx.fill();
+    p.x+=p.dx; p.y+=p.dy;
+    if(p.x>w)p.x=0; if(p.x<0)p.x=w;
+    if(p.y>h)p.y=0; if(p.y<0)p.y=h;
+  });
+  requestAnimationFrame(animateParticles);
+}
+animateParticles();
+window.addEventListener('resize',()=>{ w=canvas.width=window.innerWidth; h=canvas.height=window.innerHeight; });
+
+// Elements
+const loginPage=document.getElementById('loginPage');
+const welcomePage=document.getElementById('welcomePage');
+const industryPage=document.getElementById('industryPage');
+const genrePage=document.getElementById('genrePage');
+const loginBtn=document.getElementById('loginBtn');
+const proceedBtn=document.getElementById('proceedBtn');
+const proceedGenreBtn=document.getElementById('proceedGenreBtn');
+const hollywoodBtn=document.getElementById('hollywoodBtn');
+const bollywoodBtn=document.getElementById('bollywoodBtn');
+const genreButtonsDiv=document.getElementById('genreButtons');
+const recommendBtn=document.getElementById('recommendBtn');
+const surpriseBtn=document.getElementById('surpriseBtn');
+const searchInput=document.getElementById('searchInput');
+const recommendationsDiv=document.getElementById('recommendations');
+const homeBtn=document.getElementById('homeBtn');
+const backBtn=document.getElementById('backBtn');
+const welcomeMsg=document.getElementById('welcomeMsg');
+
+let selectedIndustry="hollywood";
+let selectedGenre=null;
+let genreIndex=0;
+
+// Movie data
+const movieData={
+  hollywood:{
+    action:["Mad Max: Fury Road","John Wick","Mission Impossible","Avengers: Endgame","The Dark Knight","Heads of State","Karate Kid: Legends"],
+    comedy:["The Hangover","Deadpool","Jumanji","Superbad","Central Intelligence","Due Date","Anyone But You","Ted"],
+    drama:["The Shawshank Redemption","Forrest Gump","Titanic","A Beautiful Mind","The Green Mile","Your Fault","The Judge","Once Upon a Time in Hollywood"],
+    horror:["The Conjuring","It","Annabelle","Insidious","Hereditary","Baggman","Until Dawn","Oddity"],
+    romance:["La La Land","The Notebook","Pride and Prejudice","Me Before You","A Star Is Born","Vanilla Sky","The Idea of You","It Ends With Us"],
+    thriller:["Gone Girl","Se7en","Shutter Island","Black Swan","Play Dirty","The Prestige","Joker","Psycho","Knives Out"],
+    fantasy:["Harry Potter","The Lord of the Rings","Pan's Labyrinth","The Hobbit","The Wizard of Oz","The Chronicles of Narnia","Bridge to Terabithia"],
+    musical:["The Lion King","Frozen","Mamma Mia!","Gigi","West Side Story","My Fair Lady","The Sound of Music"]
+  },
+  bollywood:{
+    action:["War","Pathaan","KGF","Singham","Baahubali","Sky Force","Bell-Bottom","Bodyguard","Kill","Yodha"],
+    comedy:["3 Idiots","Hera Pheri","Dhamaal","Golmaal","Chup Chup Ke","Jolly LLB","Welcome","Mujhse Shaadi Karogi","Khatta Meetha"],
+    drama:["Taare Zameen Par","Lagaan","Dangal","Swades","Piku","Talwar","Section 375","Bawaal","Jai Gangajal"],
+    horror:["Tumbbad","Pari","Bhoot","Stree","1920","Horror Story","13B:Fear Has a New Address","Lupt","shaitaan","Munjya"],
+    romance:["Yeh Jawaani Hai Deewani","Dilwale Dulhania Le Jayenge","Tamasha","Aashiqui 2","Kal Ho Naa Ho","Ranjhanaa","Hum Tum","Sanam Teri Kasam","Jab Tak Hai Jaan"],
+    thriller:["Kahaani","Talaash","Andhadhun","Drishyam","My Client's Wife","Zid","Rahasya","Kahani","Ittefaq","Ek Villain"],
+    musical:["Rock On!!","Aashiqui 2","Bajirao Mastani","Bhaag Milkha Bhaag","Ae Dil Hai Mushkil","Lagaan","Secret Superstar","Om Shanti Om","Fanney Khan","Rockstar","Meri Pyaari Bindu"],
+    adventure:["Zindagi Na Milegi Dobara","Jungle Book","Bahubali 2","Ra.One","Karwaan","Dhak Dhak","Kantara","Batla House","Tadap","Ram Setu"],
+    sciFi:["Koi Mil Gaya","Robot","Ra.One","Mr India","Alag","Robot","Blink","Kalki 2898 AD","2.O","Creature 3D","Teri Baaton Mein Aisa Uljha Jiya"],
+    mystery:["Kahaani","Rahasya","Drishyam","Wazir","Badla","The Body","Karthik Calling Karthik","8x10 Tasveer","Rustom","Table No.21","Drishyam"]
+  }
+};
+
+// Genres
+const genres=[
+  {key:"action",icon:"💥",label:"Action"},
+  {key:"comedy",icon:"😂",label:"Comedy"},
+  {key:"drama",icon:"🎭",label:"Drama"},
+  {key:"horror",icon:"👻",label:"Horror"},
+  {key:"romance",icon:"💖",label:"Romance"},
+  {key:"thriller",icon:"🕵️‍♂️",label:"Thriller"},
+  {key:"fantasy",icon:"✨",label:"Fantasy"},
+  {key:"musical",icon:"🎶",label:"Musical"},
+  {key:"adventure",icon:"🏔️",label:"Adventure"},
+  {key:"sciFi",icon:"👽",label:"Sci-Fi"},
+  {key:"mystery",icon:"🕵️‍♀️",label:"Mystery"}
+];
+
+// Populate genres
+function populateGenres(){
+  genreButtonsDiv.innerHTML="";
+  genres.forEach(g=>{
+    const btn=document.createElement('button');
+    btn.className='genre-btn';
+    btn.textContent=`${g.icon} ${g.label}`;
+    btn.onclick=()=>{
+      document.querySelectorAll('.genre-btn').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      selectedGenre=g.key;
+      genreIndex=0;
+      recommendationsDiv.innerHTML='';
+    };
+    genreButtonsDiv.appendChild(btn);
+  });
+}
+
+// Shuffle array
+function shuffle(arr){ return arr.sort(()=>Math.random()-0.5); }
+
+// Login
+loginBtn.onclick=()=>{
+  const username=document.getElementById('username').value.trim();
+  const password=document.getElementById('password').value;
+  if(!username||!password){ alert("Enter username and password"); return; }
+  loginPage.classList.add('hidden');
+  welcomePage.classList.remove('hidden');
+  welcomeMsg.textContent=`Hello ${username}! Ready for movie magic? 🍿`;
+};
+
+// Proceed
+proceedBtn.onclick=()=>{
+  welcomePage.classList.add('hidden');
+  industryPage.classList.remove('hidden');
+};
+
+// Industry selection
+hollywoodBtn.onclick=()=>{
+  selectedIndustry="hollywood";
+  hollywoodBtn.classList.add('active');
+  bollywoodBtn.classList.remove('active');
+  genreIndex=0;
+  recommendationsDiv.innerHTML='';
+};
+bollywoodBtn.onclick=()=>{
+  selectedIndustry="bollywood";
+  bollywoodBtn.classList.add('active');
+  hollywoodBtn.classList.remove('active');
+  genreIndex=0;
+  recommendationsDiv.innerHTML='';
+};
+proceedGenreBtn.onclick=()=>{
+  industryPage.classList.add('hidden');
+  genrePage.classList.remove('hidden');
+  populateGenres();
+};
+
+// Show 3 movies at a time
+recommendBtn.onclick=()=>{
+  if(!selectedGenre){ alert("Select a genre!"); return; }
+  const movies=shuffle([...movieData[selectedIndustry][selectedGenre] || []]);
+  const start=genreIndex*3;
+  const end=start+3;
+  recommendationsDiv.innerHTML='';
+  movies.slice(start,end).forEach(m=>{
+    const div=document.createElement('div');
+    div.className='movie';
+    div.textContent=m;
+    recommendationsDiv.appendChild(div);
+  });
+  genreIndex++;
+  if(genreIndex*3>=movies.length) genreIndex=0;
+};
+
+// Surprise
+surpriseBtn.onclick=()=>{
+  const allMovies=Object.values(movieData[selectedIndustry]).flat();
+  const rand=allMovies[Math.floor(Math.random()*allMovies.length)];
+  recommendationsDiv.innerHTML=`<div class="movie">🎲 Surprise Pick: ${rand}</div>`;
+};
+
+// Search
+searchInput.oninput=()=>{
+  const q=searchInput.value.toLowerCase();
+  if(!selectedGenre){ recommendationsDiv.innerHTML=''; return; }
+  let movies=(movieData[selectedIndustry][selectedGenre] || []).filter(m=>m.toLowerCase().includes(q));
+  recommendationsDiv.innerHTML='';
+  movies.forEach(m=>{
+    const div=document.createElement('div');
+    div.className='movie';
+    div.textContent=m;
+    recommendationsDiv.appendChild(div);
+  });
+};
+
+// Home & Back buttons
+homeBtn.onclick=()=>{
+  genrePage.classList.add('hidden');
+  loginPage.classList.remove('hidden');
+  genreIndex=0;
+  selectedGenre=null;
+  recommendationsDiv.innerHTML='';
+};
+backBtn.onclick=()=>{
+  industryPage.classList.remove('hidden');
+  genrePage.classList.add('hidden');
+  genreIndex=0;
+  selectedGenre=null;
+  recommendationsDiv.innerHTML='';
+};
+</script>
+</body>
+</html>
